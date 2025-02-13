@@ -41,40 +41,66 @@ const schema = Joi.object({
 // Endpoint: Mengirim data RFID via SSE
 let rfidData = null;
 
-// Endpoint untuk menerima data RFID dari ESP8266 dan menyimpan ke database
-app.post('/rfid', async (req, res) => {
-    const { rfid_code, nama, info_tambahan, waktu_scan } = req.body;
+// Endpoint: Tambah data hewan
+app.post('/hewan', async (req, res) => {
+    console.log("Data yang diterima di backend:", req.body); // Debugging
+
+    const { error } = schema.validate(req.body);
+    if (error) {
+        console.log("Validasi gagal:", error.details[0].message);
+        return res.status(400).json({ message: error.details[0].message });
+    }
+
+    const { id, nama, jenis, usia, status_kesehatan } = req.body;
     try {
-        // Simpan data ke Supabase atau PostgreSQL
+        // Simpan data ke Supabase
         const { data, error } = await supabase
             .from('hewan')
-            .insert([{ rfid_code, nama, info_tambahan, waktu_scan }]);
+            .insert([{ id, nama, jenis, usia, status_kesehatan }])
+            .select();
 
-        if (error) throw error;
+        if (error) {
+            throw error;
+        }
 
-        rfidData = { rfid_code, nama, info_tambahan, waktu_scan };
-
-        // Kirimkan data melalui SSE ke klien
-        res.status(200).send('Data diterima');
+        console.log("Data berhasil dimasukkan ke Supabase:", data[0]);
+        res.status(201).json(data[0]); // Kembali dengan data yang baru dimasukkan
     } catch (err) {
-        console.error(err);
+        console.error("Kesalahan di server:", err);
         res.status(500).json({ message: 'Terjadi kesalahan di server' });
     }
 });
 
 // Endpoint untuk mengirimkan data secara real-time (SSE)
-app.get('/events', (req, res) => {
+app.get('/hewan', (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
     // Kirimkan data RFID ke klien setiap 1 detik
-    const sendData = () => {
-        if (rfidData) {
-            res.write(`data: ${JSON.stringify(rfidData)}\n\n`);
+    const sendData = async () => {
+        try {
+            // Ambil data terbaru dari Supabase (1 data hewan terakhir)
+            const { data, error } = await supabase
+                .from('hewan')
+                .select('*')
+                .order('id', { ascending: false })
+                .limit(1);
+
+            if (error) {
+                throw error;
+            }
+
+            if (data.length > 0) {
+                res.write(`data: ${JSON.stringify(data[0])}\n\n`);
+            }
+        } catch (err) {
+            console.error('Kesalahan saat mengambil data:', err);
+            res.status(500).json({ message: 'Terjadi kesalahan di server' });
         }
-        setTimeout(sendData, 1000);
+
+        setTimeout(sendData, 1000); // Kirim data setiap 1 detik
     };
 
     sendData();
