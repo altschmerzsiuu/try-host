@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan RFID</title>
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <ul>
+            <li><a href="index.html">Dashboard</a></li>
+            <li><a href="tambah-hewan.html">Tambah Hewan</a></li>
+            <li><a href="cari-hewan.html">Cari Hewan</a></li>
+            <li><a href="scan-rfid.html">Scan RFID</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h2>Scan RFID</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>RFID Code</th>
+                    <th>Nama Hewan</th>
+                    <th>Info Tambahan</th>
+                    <th>Waktu Scan</th>
+                </tr>
+            </thead>
+            <tbody id="scan-results">
+                <!-- Data akan ditampilkan di sini -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Koneksi ke server WebSocket
+        const socket = io('http://localhost:3003');  // Sesuaikan dengan URL server Anda
+    
+        // Menunggu data yang dikirimkan oleh server
+        socket.on('rfid-scanned', (data) => {
+            console.log('Data diterima dari server:', data);
+            const rfidDataDiv = document.getElementById('scan-results');
+            rfidDataDiv.innerHTML = `
+                <tr>
+                    <td>${data.rfid_code}</td>
+                    <td>${data.nama}</td>
+                    <td>${data.info_tambahan}</td>
+                    <td>${data.waktu_scan}</td>
+                </tr>
+            `;
+            });
+      </script>
+</body>
+</html>
