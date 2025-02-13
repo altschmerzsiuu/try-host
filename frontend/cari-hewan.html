@@ -39,12 +39,10 @@
             </tbody>
         </table>
 
-        <!-- Informasi jumlah data yang ditampilkan -->
         <div class="page-info">
             <span id="page-info">Menampilkan 10 data dari total 100 hewan.</span>
         </div>
 
-        <!-- Pilih jumlah data per halaman -->
         <div class="pagination-options">
             <label for="per-page">Jumlah per halaman:</label>
             <select id="per-page">
@@ -57,54 +55,57 @@
 
     <script>
         let perPage = 10;
-        let sortOrder = [true, true, true, true, true]; // Menyimpan status sorting tiap kolom
+        let sortOrder = [true, true, true, true, true];
+
+        // Deklarasikan baseUrl di awal
+        const baseUrl = "https://try-host.onrender.com"; 
 
         document.addEventListener("DOMContentLoaded", function() {
             const searchInput = document.getElementById("search-input");
             const hewanList = document.getElementById("hewan-list");
             const perPageSelect = document.getElementById("per-page");
 
-            // Mengubah jumlah data per halaman
             perPageSelect.addEventListener("change", function() {
                 perPage = parseInt(perPageSelect.value);
                 loadData();
             });
 
-            // Mencari data berdasarkan input
             searchInput.addEventListener("input", function() {
                 loadData();
             });
 
-            // Load data saat pertama kali
+            // Load data setelah baseUrl sudah dideklarasikan
             loadData();
-
-            const baseUrl = "https://try-host.onrender.com"; // Ganti dengan URL API online kamu
-
-            function loadData() {
-                const search = searchInput.value;
-                const url = `${baseUrl}/hewan?search=${search}&limit=${perPage}`;
-
-                fetch(url)
-                    .then(response => response.json())
-                    .then(data => {
-                        hewanList.innerHTML = '';
-                        data.data.forEach(hewan => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>${hewan.id}</td>
-                                <td>${hewan.nama}</td>
-                                <td>${hewan.jenis}</td>
-                                <td>${hewan.usia}</td>
-                                <td>${hewan.status_kesehatan}</td>
-                            `;
-                            hewanList.appendChild(row);
-                        });
-
-                        document.getElementById("page-info").innerText = `Menampilkan ${data.data.length} data dari total ${data.totalCount} hewan.`;
-                    })
-                    .catch(error => console.error("Error:", error));
-            }
         });
+
+        function loadData() {
+            const searchInput = document.getElementById("search-input").value;
+            const hewanList = document.getElementById("hewan-list");
+            const url = `${baseUrl}/hewan?search=${searchInput}&limit=${perPage}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    hewanList.innerHTML = '';
+                    data.data.forEach(hewan => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${hewan.id}</td>
+                            <td>${hewan.nama}</td>
+                            <td>${hewan.jenis}</td>
+                            <td>${hewan.usia}</td>
+                            <td>${hewan.status_kesehatan}</td>
+                        `;
+                        hewanList.appendChild(row);
+                    });
+
+                    document.getElementById("page-info").innerText = `Menampilkan ${data.data.length} data dari total ${data.totalCount} hewan.`;
+                })
+                .catch(error => {
+                    console.error("Error fetching data:", error);
+                    alert("Gagal mengambil data, cek konsol untuk detail.");
+                });
+        }
 
         function sortTable(columnIndex) {
             let table = document.querySelector("table tbody");
@@ -123,7 +124,6 @@
             });
 
             sortOrder[columnIndex] = !isAscending;
-
             rows.forEach(row => table.appendChild(row));
         }
     </script>
