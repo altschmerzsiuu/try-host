@@ -52,34 +52,46 @@ io.on('connection', (socket) => {
     });
 });
 
-// Endpoint: Tambah data hewan
-app.post('/hewan', async (req, res) => {
-    console.log("Data yang diterima di backend:", req.body); // Debugging
+// Endpoint: Ambil daftar hewan dengan pagination dan search
+app.get('/hewan', async (req, res) => {
+    let { page = 1, limit = 10, search = '', sortBy = 'id', order = 'ASC' } = req.query;
+    page = parseInt(page);
+    limit = parseInt(limit);
+    
+    const validColumns = ['nama', 'jenis', 'usia', 'status_kesehatan', 'id'];
+    order = order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
-    const { error } = schema.validate(req.body);
-    if (error) {
-        console.log("Validasi gagal:", error.details[0].message);
-        return res.status(400).json({ message: error.details[0].message });
+    if (!validColumns.includes(sortBy)) {
+        return res.status(400).json({ message: 'Kolom sortBy tidak valid' });
     }
 
-    const { id, nama, jenis, usia, status_kesehatan } = req.body;
     try {
-        const result = await pool.query(
-            'INSERT INTO hewan (id, nama, jenis, usia, status_kesehatan) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [id, nama, jenis, usia, status_kesehatan]
-        );
-        console.log("Data berhasil dimasukkan ke PostgreSQL:", result.rows[0]);
-        
-        // Kirim data ke semua klien melalui Socket.IO
-        io.emit('hewan-added', result.rows[0]); // Mengirim data hewan yang baru ditambahkan ke semua klien
+        const offset = (page - 1) * limit;
 
-        res.status(201).json(result.rows[0]);
+        const query = `
+            SELECT * FROM hewan
+            WHERE nama ILIKE $1 OR jenis ILIKE $1
+            ORDER BY ${sortBy} ${order}
+            LIMIT $2 OFFSET $3
+        `;
+
+        const result = await pool.query(query, [`%${search}%`, limit, offset]);
+
+        const countQuery = `SELECT COUNT(*) FROM hewan WHERE nama ILIKE $1 OR jenis ILIKE $1`;
+        const totalCount = await pool.query(countQuery, [`%${search}%`]);
+
+        res.json({
+            total: parseInt(totalCount.rows[0].count),
+            page,
+            limit,
+            totalPages: Math.ceil(totalCount.rows[0].count / limit),
+            data: result.rows,
+        });
     } catch (err) {
-        console.error("Kesalahan di server:", err);
+        console.error(err);
         res.status(500).json({ message: 'Terjadi kesalahan di server' });
     }
 });
-
 
 // Endpoint: Tambah data hewan
 app.post('/hewan', async (req, res) => {
