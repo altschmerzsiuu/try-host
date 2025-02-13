@@ -4,18 +4,13 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 const path = require('path');
-const http = require('http'); // Tambahkan http
-const socketIo = require('socket.io'); // Tambahkan socket.io
 
 const app = express();
 const port =  process.env.PORT || 3002;
 
 // Middleware
 app.use(express.json());
-app.use(cors({
-    origin: "*", // Atau bisa diatur ke domain tertentu
-    methods: ["GET", "POST"]
-}));
+app.use(cors());
 
 app.use(express.static(path.join(__dirname, '../frontend')));
 
@@ -30,36 +25,12 @@ const pool = new Pool({
 // Validasi schema dengan Joi (lebih fleksibel)
 const schema = Joi.object({
     id: Joi.string().trim().min(1).required(),  // Tambahkan id agar bisa divalidasi
-    // nama: Joi.string().trim().min(1).required(),
-    // jenis: Joi.string().trim().min(1).required(),
-    // usia: Joi.number().integer().min(0).required(),
-    // status_kesehatan: Joi.string().trim().min(3).required(),
+    nama: Joi.string().trim().min(1).required(),
+    jenis: Joi.string().trim().min(1).required(),
+    usia: Joi.number().integer().min(0).required(),
+    status_kesehatan: Joi.string().trim().min(3).required(),
 });
 
-const server = http.createServer(app); // Ganti app.listen dengan http.createServer
-
-const io = socketIo(server, {
-    cors: {
-        origin: "*",  // Bisa diubah ke domain spesifik jika perlu
-        methods: ["GET", "POST"]
-    }
-});
-
-// Ketika ada koneksi baru
-io.on('connection', (socket) => {
-    console.log('User terhubung ke WebSocket');
-    
-    // Kirim pesan atau data ketika ada event 'hewan-added'
-    socket.on('hewan-added', (data) => {
-        console.log('Data hewan ditambahkan:', data);
-        // Kirimkan data ke klien (misalnya mengirim data hewan setelah berhasil disimpan)
-        socket.emit('hewan-updated', data);
-    });
-
-    socket.on('disconnect', () => {
-        console.log('User terputus');
-    });
-});
 
 // Endpoint: Ambil daftar hewan dengan pagination dan search
 app.get('/hewan', async (req, res) => {
@@ -173,6 +144,6 @@ app.delete('/hewan/:id', async (req, res) => {
 });
 
 // Jalankan server
-server.listen(port, () => {
+app.listen(port, () => {
     console.log(`Server berjalan di http://localhost:${port}`);
 });
