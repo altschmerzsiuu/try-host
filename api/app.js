@@ -117,35 +117,37 @@ app.post('/hewan', async (req, res) => {
     }
 });
 
-// Endpoint: Update data hewan
-app.put('/hewan/:id', async (req, res) => {
-    const { id } = req.params;
+
+// Endpoint: Tambah data hewan berdasarkan RFID UID
+app.post('/hewan', async (req, res) => {
+    console.log("Data yang diterima di backend:", req.body); // Debugging
+
+    // Validasi hanya untuk 'id' (UID dari kartu RFID)
+    const schema = Joi.object({
+        id: Joi.string().required(), // Hanya ID yang wajib
+    });
+
     const { error } = schema.validate(req.body);
     if (error) {
+        console.log("Validasi gagal:", error.details[0].message);
         return res.status(400).json({ message: error.details[0].message });
     }
 
-    const { nama, jenis, usia, status_kesehatan } = req.body;
-    if (!id || isNaN(id)) {
-        return res.status(400).json({ message: 'ID tidak valid' });
-    }
+    const { id } = req.body; // Hanya ambil ID dari request
 
     try {
         const result = await pool.query(
-            'UPDATE hewan SET nama = $1, jenis = $2, usia = $3, status_kesehatan = $4 WHERE id = $5 RETURNING *',
-            [nama, jenis, usia, status_kesehatan, id]
+            'INSERT INTO hewan (id) VALUES ($1) RETURNING *', 
+            [id] // Hanya ID yang dimasukkan
         );
-
-        if (result.rows.length > 0) {
-            res.status(200).json(result.rows[0]);
-        } else {
-            res.status(404).json({ message: 'Hewan tidak ditemukan dengan ID tersebut' });
-        }
+        console.log("Data berhasil dimasukkan ke PostgreSQL:", result.rows[0]);
+        res.status(201).json(result.rows[0]);
     } catch (err) {
-        console.error(err.stack);
+        console.error("Kesalahan di server:", err);
         res.status(500).json({ message: 'Terjadi kesalahan di server' });
     }
 });
+
 
 // Endpoint: Hapus data hewan
 app.delete('/hewan/:id', async (req, res) => {
