@@ -44,9 +44,11 @@
             const rfidDataDiv = document.getElementById('scan-results');
             rfidDataDiv.innerHTML = `
                 <tr>
-                    <td>${data.rfid_code}</td>
+                    <td>${data.id}</td>
                     <td>${data.nama}</td>
-                    <td>${data.info_tambahan}</td>
+                    <td>${data.jenis}</td>
+                    <td>${data.usia}</td>
+                    <td>${data.status_kesehatan}</td>
                     <td>${data.waktu_scan}</td>
                 </tr>
             `;
