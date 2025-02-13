@@ -5,11 +5,13 @@ const cors = require('cors');
 const { Pool } = require('pg');
 
 const app = express();
-const port = 3002;
+const port =  process.env.PORT || 3002;
 
 // Middleware
 app.use(express.json());
 app.use(cors());
+
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Koneksi PostgreSQL dengan Pool
 const pool = new Pool({
