@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scan RFID</title>
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -34,15 +35,12 @@
     </div>
 
     <script>
-        // Koneksi ke endpoint SSE untuk menerima data dari server
-        const eventSource = new EventSource('https://try-host.onrender.com/hewan');  // Sesuaikan dengan URL server Anda
-
+        // Koneksi ke server WebSocket
+        const socket = io('http://localhost:3003');  // Sesuaikan dengan URL server Anda
+    
         // Menunggu data yang dikirimkan oleh server
-        eventSource.onmessage = (event) => {
-            const data = JSON.parse(event.data);  // Parsing data dari server
+        socket.on('rfid-scanned', (data) => {
             console.log('Data diterima dari server:', data);
-
-            // Tampilkan data RFID pada tabel
             const rfidDataDiv = document.getElementById('scan-results');
             rfidDataDiv.innerHTML = `
                 <tr>
@@ -52,11 +50,7 @@
                     <td>${data.waktu_scan}</td>
                 </tr>
             `;
-        };
-
-        eventSource.onerror = (error) => {
-            console.error('Error SSE:', error);
-        };
-    </script>
+            });
+      </script>
 </body>
 </html>
