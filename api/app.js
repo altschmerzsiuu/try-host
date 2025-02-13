@@ -4,6 +4,8 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 const path = require('path');
+const http = require('http'); // Tambahkan http
+const socketIo = require('socket.io'); // Tambahkan socket.io
 
 const app = express();
 const port =  process.env.PORT || 3002;
@@ -31,47 +33,53 @@ const schema = Joi.object({
     status_kesehatan: Joi.string().trim().min(3).required(),
 });
 
+const server = http.createServer(app); // Ganti app.listen dengan http.createServer
+const io = socketIo(server); // Inisialisasi Socket.IO
 
-// Endpoint: Ambil daftar hewan dengan pagination dan search
-app.get('/hewan', async (req, res) => {
-    let { page = 1, limit = 10, search = '', sortBy = 'id', order = 'ASC' } = req.query;
-    page = parseInt(page);
-    limit = parseInt(limit);
+// Ketika ada koneksi baru
+io.on('connection', (socket) => {
+    console.log('User terhubung ke WebSocket');
     
-    const validColumns = ['nama', 'jenis', 'usia', 'status_kesehatan', 'id'];
-    order = order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+    // Kirim pesan atau data ketika ada event 'hewan-added'
+    socket.on('hewan-added', (data) => {
+        console.log('Data hewan ditambahkan:', data);
+        // Kirimkan data ke klien (misalnya mengirim data hewan setelah berhasil disimpan)
+        socket.emit('hewan-updated', data);
+    });
 
-    if (!validColumns.includes(sortBy)) {
-        return res.status(400).json({ message: 'Kolom sortBy tidak valid' });
+    socket.on('disconnect', () => {
+        console.log('User terputus');
+    });
+});
+
+// Endpoint: Tambah data hewan
+app.post('/hewan', async (req, res) => {
+    console.log("Data yang diterima di backend:", req.body); // Debugging
+
+    const { error } = schema.validate(req.body);
+    if (error) {
+        console.log("Validasi gagal:", error.details[0].message);
+        return res.status(400).json({ message: error.details[0].message });
     }
 
+    const { id, nama, jenis, usia, status_kesehatan } = req.body;
     try {
-        const offset = (page - 1) * limit;
+        const result = await pool.query(
+            'INSERT INTO hewan (id, nama, jenis, usia, status_kesehatan) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [id, nama, jenis, usia, status_kesehatan]
+        );
+        console.log("Data berhasil dimasukkan ke PostgreSQL:", result.rows[0]);
+        
+        // Kirim data ke semua klien melalui Socket.IO
+        io.emit('hewan-added', result.rows[0]); // Mengirim data hewan yang baru ditambahkan ke semua klien
 
-        const query = `
-            SELECT * FROM hewan
-            WHERE nama ILIKE $1 OR jenis ILIKE $1
-            ORDER BY ${sortBy} ${order}
-            LIMIT $2 OFFSET $3
-        `;
-
-        const result = await pool.query(query, [`%${search}%`, limit, offset]);
-
-        const countQuery = `SELECT COUNT(*) FROM hewan WHERE nama ILIKE $1 OR jenis ILIKE $1`;
-        const totalCount = await pool.query(countQuery, [`%${search}%`]);
-
-        res.json({
-            total: parseInt(totalCount.rows[0].count),
-            page,
-            limit,
-            totalPages: Math.ceil(totalCount.rows[0].count / limit),
-            data: result.rows,
-        });
+        res.status(201).json(result.rows[0]);
     } catch (err) {
-        console.error(err);
+        console.error("Kesalahan di server:", err);
         res.status(500).json({ message: 'Terjadi kesalahan di server' });
     }
 });
+
 
 // Endpoint: Tambah data hewan
 app.post('/hewan', async (req, res) => {
