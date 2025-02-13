@@ -78,9 +78,11 @@
             // Load data saat pertama kali
             loadData();
 
+            const baseUrl = "https://try-host.onrender.com"; // Ganti dengan URL API online kamu
+
             function loadData() {
                 const search = searchInput.value;
-                const url = `http://localhost:3002/hewan?search=${search}&limit=${perPage}`;
+                const url = `${baseUrl}/hewan?search=${search}&limit=${perPage}`;
 
                 fetch(url)
                     .then(response => response.json())
