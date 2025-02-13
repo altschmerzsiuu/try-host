@@ -30,10 +30,10 @@ const pool = new Pool({
 // Validasi schema dengan Joi (lebih fleksibel)
 const schema = Joi.object({
     id: Joi.string().trim().min(1).required(),  // Tambahkan id agar bisa divalidasi
-    nama: Joi.string().trim().min(1).required(),
-    jenis: Joi.string().trim().min(1).required(),
-    usia: Joi.number().integer().min(0).required(),
-    status_kesehatan: Joi.string().trim().min(3).required(),
+    // nama: Joi.string().trim().min(1).required(),
+    // jenis: Joi.string().trim().min(1).required(),
+    // usia: Joi.number().integer().min(0).required(),
+    // status_kesehatan: Joi.string().trim().min(3).required(),
 });
 
 const server = http.createServer(app); // Ganti app.listen dengan http.createServer
