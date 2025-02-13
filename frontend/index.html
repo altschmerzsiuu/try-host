@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Hewan</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <body>
+        <header>
+            <nav class="navbar">
+                <div class="logo">Manajemen Hewan</div>
+                <ul class="nav-links">
+                    <li><a href="index.html">Dashboard</a></li>
+                    <li><a href="tambah-hewan.html">Tambah Hewan</a></li>
+                    <li><a href="cari-hewan.html">Cari Hewan</a></li>
+                    <li><a href="scan-rfid.html">Scan RFID</a></li>
+                </ul>
+                <div class="burger" onclick="toggleMenu()">&#9776;</div>
+            </nav>
+        </header>
+    
+        <div id="app">
+            <h1>Selamat datang di Dashboard Manajemen Hewan</h1>
+        </div>
+    
+        <script>
+            function toggleMenu() {
+                document.querySelector('.nav-links').classList.toggle('active');
+            }
+        </script>
+    </body>
+    
+    </div>
+</body>
+</html>
