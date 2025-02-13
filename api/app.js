@@ -38,62 +38,46 @@ const schema = Joi.object({
     status_kesehatan: Joi.string().trim().min(3).required(),
 });
 
+// Endpoint: Mengirim data RFID via SSE
+let rfidData = null;
 
-// Endpoint: Ambil daftar hewan dengan pagination dan search
-app.get('/hewan', async (req, res) => {
-    let { page = 1, limit = 10, search = '', sortBy = 'id', order = 'ASC' } = req.query;
-    page = parseInt(page);
-    limit = parseInt(limit);
-
-    const validColumns = ['nama', 'jenis', 'usia', 'status_kesehatan', 'id'];
-    order = order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
-
-    if (!validColumns.includes(sortBy)) {
-        return res.status(400).json({ message: 'Kolom sortBy tidak valid' });
-    }
-
+// Endpoint untuk menerima data RFID dari ESP8266 dan menyimpan ke database
+app.post('/rfid', async (req, res) => {
+    const { rfid_code, nama, info_tambahan, waktu_scan } = req.body;
     try {
-        const offset = (page - 1) * limit;
-        
-        // Query Supabase
-        const { data, error, count } = await supabase
-          .from('hewan')  // Ganti dengan nama tabel kamu di Supabase
-          .select('*', { count: 'exact' })
-          .ilike('nama', `%${search}%`)
-          .or(`jenis.ilike.%${search}%`)
-          .order(sortBy, { ascending: order === 'ASC' })
-          .range(offset, offset + limit - 1);
+        // Simpan data ke Supabase atau PostgreSQL
+        const { data, error } = await supabase
+            .from('hewan')
+            .insert([{ rfid_code, nama, info_tambahan, waktu_scan }]);
 
         if (error) throw error;
 
-        res.json({
-            total: count,
-            page,
-            limit,
-            totalPages: Math.ceil(count / limit),
-            data,
-        });
+        rfidData = { rfid_code, nama, info_tambahan, waktu_scan };
+
+        // Kirimkan data melalui SSE ke klien
+        res.status(200).send('Data diterima');
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Terjadi kesalahan di server' });
     }
 });
 
-// Menambahkan data hewan
-app.post('/hewan', async (req, res) => {
-    const { id, nama, jenis, usia, status_kesehatan } = req.body;
-    try {
-        const { data, error } = await supabase
-          .from('hewan')  // Ganti dengan nama tabel kamu di Supabase
-          .insert([{ id, nama, jenis, usia, status_kesehatan }]);
+// Endpoint untuk mengirimkan data secara real-time (SSE)
+app.get('/events', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
 
-        if (error) throw error;
+    // Kirimkan data RFID ke klien setiap 1 detik
+    const sendData = () => {
+        if (rfidData) {
+            res.write(`data: ${JSON.stringify(rfidData)}\n\n`);
+        }
+        setTimeout(sendData, 1000);
+    };
 
-        res.status(201).json(data[0]);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Terjadi kesalahan di server' });
-    }
+    sendData();
 });
 
 // Memperbarui data hewan
