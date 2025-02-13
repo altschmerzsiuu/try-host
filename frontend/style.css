@@ -1,0 +1,401 @@
+/* CSS yang diberikan */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #fafafa;
+    color: #333;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+h1 {
+    text-align: center;
+    color: #4CAF50;
+    font-size: 2.5rem;
+    margin: 20px 0;
+    text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+form {
+    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+}
+
+input {
+    padding: 12px;
+    width: 250px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    transition: border 0.3s ease;
+}
+
+input:focus {
+    border: 2px solid #4CAF50;
+}
+
+button {
+    padding: 12px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s ease;
+}
+
+button:hover {
+    background-color: #45a049;
+    transform: scale(1.05);
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+#livestock-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+#livestock-list li {
+    background-color: #fff;
+    padding: 15px;
+    margin-bottom: 12px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+#livestock-list li:hover {
+    transform: translateY(-5px);
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+#livestock-list li button {
+    background-color: #f44336;
+    padding: 8px 15px;
+    border-radius: 5px;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#livestock-list li button:hover {
+    background-color: #e53935;
+}
+
+.status-box {
+    background-color: #ffecb3;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.status-box h2 {
+    font-size: 1.5rem;
+    color: #f57c00;
+    margin-bottom: 10px;
+}
+
+.status-box p {
+    font-size: 1.1rem;
+    color: #555;
+}
+
+/* Responsif untuk tampilan mobile */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2rem;
+    }
+
+    input {
+        width: 200px;
+    }
+
+    button {
+        padding: 10px 18px;
+    }
+
+    #data-container {
+        padding: 15px;
+    }
+}
+
+/* Kolom pencarian dan tombol di tengah */
+#search-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#search-container input {
+    padding: 10px;
+    width: 250px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    margin-right: 10px;
+    transition: border 0.3s ease;
+}
+
+#search-container button {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s ease;
+}
+
+#search-container button:hover {
+    background-color: #45a049;
+    transform: scale(1.05);
+}
+
+#search-container button:active {
+    transform: scale(0.98);
+}
+
+#pagination {
+    display: flex;
+    justify-content: center;  /* Menyusun tombol di tengah */
+    gap: 20px;  /* Memberi jarak antar tombol */
+    margin-top: 20px;
+}
+
+#pagination button {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s ease;
+}
+
+#pagination button:hover {
+    background-color: #45a049;
+    transform: scale(1.05);
+}
+
+#pagination button:active {
+    transform: scale(0.98);
+}
+
+/* untuk cari-hewan.html */
+.container {
+    max-width: 90%;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.search-bar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.search-bar input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.search-bar button {
+    padding: 10px 20px;
+    background-color: #4c82f7;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th, td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+th {
+    background: #f0f2f5;
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background: #f9f9f9;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #4CAF50;
+    padding: 15px 20px;
+    color: white;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+}
+
+.nav-links li {
+    display: inline;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: white;
+    font-size: 1.1rem;
+    padding: 8px 12px;
+    border-radius: 5px;
+    transition: background 0.3s;
+}
+
+.nav-links a:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Tombol Menu Burger untuk HP */
+.burger {
+    display: none;
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+/* Responsif: Ubah menjadi menu burger jika layar kecil */
+@media (max-width: 768px) {
+    .nav-links {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        width: 100%;
+        background-color: #4CAF50;
+        padding: 10px 0;
+    }
+
+    .nav-links.active {
+        display: flex;
+    }
+
+    .nav-links li {
+        text-align: center;
+        padding: 10px;
+    }
+
+    .burger {
+        display: block;
+    }
+
+    @media (max-width: 768px) {
+        .navbar ul {
+            flex-direction: column;
+            gap: 10px;
+        }
+    }
+    
+}
+
+.navbar {
+    background-color: #4CAF50;
+    padding: 15px;
+    text-align: center;
+}
+
+.navbar ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.navbar ul li {
+    display: inline;
+}
+
+.navbar ul li a {
+    text-decoration: none;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: bold;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: background 0.3s ease;
+}
+
+.navbar ul li a:hover {
+    background: #45a049;
+}
+
+/* Menambahkan efek hover dan pointer cursor pada header tabel */
+th {
+    cursor: pointer;
+    transition: background-color 0.5s ease;
+}
+
+th:hover {
+    background-color: #f1f1f1; /* Warna latar belakang saat hover */
+}
+
+/* Tabel yang ada di scan-rfid.html */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th, td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+th {
+    background: #f0f2f5;
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background: #f9f9f9;
+}
+
+#scan-results td {
+    text-align: center;
+    vertical-align: middle;
+}
