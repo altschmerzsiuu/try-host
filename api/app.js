@@ -12,7 +12,10 @@ const port =  process.env.PORT || 3002;
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: "*", // Atau bisa diatur ke domain tertentu
+    methods: ["GET", "POST"]
+}));
 
 app.use(express.static(path.join(__dirname, '../frontend')));
 
@@ -34,7 +37,13 @@ const schema = Joi.object({
 });
 
 const server = http.createServer(app); // Ganti app.listen dengan http.createServer
-const io = socketIo(server); // Inisialisasi Socket.IO
+
+const io = socketIo(server, {
+    cors: {
+        origin: "*",  // Bisa diubah ke domain spesifik jika perlu
+        methods: ["GET", "POST"]
+    }
+});
 
 // Ketika ada koneksi baru
 io.on('connection', (socket) => {
@@ -117,37 +126,35 @@ app.post('/hewan', async (req, res) => {
     }
 });
 
-
-// Endpoint: Tambah data hewan berdasarkan RFID UID
-app.post('/hewan', async (req, res) => {
-    console.log("Data yang diterima di backend:", req.body); // Debugging
-
-    // Validasi hanya untuk 'id' (UID dari kartu RFID)
-    const schema = Joi.object({
-        id: Joi.string().required(), // Hanya ID yang wajib
-    });
-
+// Endpoint: Update data hewan
+app.put('/hewan/:id', async (req, res) => {
+    const { id } = req.params;
     const { error } = schema.validate(req.body);
     if (error) {
-        console.log("Validasi gagal:", error.details[0].message);
         return res.status(400).json({ message: error.details[0].message });
     }
 
-    const { id } = req.body; // Hanya ambil ID dari request
+    const { nama, jenis, usia, status_kesehatan } = req.body;
+    if (!id || isNaN(id)) {
+        return res.status(400).json({ message: 'ID tidak valid' });
+    }
 
     try {
         const result = await pool.query(
-            'INSERT INTO hewan (id) VALUES ($1) RETURNING *', 
-            [id] // Hanya ID yang dimasukkan
+            'UPDATE hewan SET nama = $1, jenis = $2, usia = $3, status_kesehatan = $4 WHERE id = $5 RETURNING *',
+            [nama, jenis, usia, status_kesehatan, id]
         );
-        console.log("Data berhasil dimasukkan ke PostgreSQL:", result.rows[0]);
-        res.status(201).json(result.rows[0]);
+
+        if (result.rows.length > 0) {
+            res.status(200).json(result.rows[0]);
+        } else {
+            res.status(404).json({ message: 'Hewan tidak ditemukan dengan ID tersebut' });
+        }
     } catch (err) {
-        console.error("Kesalahan di server:", err);
+        console.error(err.stack);
         res.status(500).json({ message: 'Terjadi kesalahan di server' });
     }
 });
-
 
 // Endpoint: Hapus data hewan
 app.delete('/hewan/:id', async (req, res) => {
@@ -166,6 +173,6 @@ app.delete('/hewan/:id', async (req, res) => {
 });
 
 // Jalankan server
-app.listen(port, () => {
+server.listen(port, () => {
     console.log(`Server berjalan di http://localhost:${port}`);
 });
