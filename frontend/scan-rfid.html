@@ -36,7 +36,9 @@
 
     <script>
         // Koneksi ke server WebSocket
-        const socket = io('https://try-host.onrender.com');  // Pastikan URL yang benar
+        const socket = io("https://try-host.onrender.com", {
+            transports: ["websocket", "polling"]
+        });
 
         // Tangani error WebSocket
         socket.on('connect_error', (error) => {
@@ -48,11 +50,9 @@
             const rfidDataDiv = document.getElementById('scan-results');
             rfidDataDiv.innerHTML = `
                 <tr>
-                    <td>${data.id}</td>
+                    <td>${data.rfid_code}</td>
                     <td>${data.nama}</td>
-                    <td>${data.jenis}</td>
-                    <td>${data.usia}</td>
-                    <td>${data.status_kesehatan}</td>
+                    <td>${data.info_tambahan}</td>
                     <td>${data.waktu_scan}</td>
                 </tr>
             `;
