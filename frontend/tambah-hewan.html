@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambah Hewan</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <ul>
+            <li><a href="index.html">Dashboard</a></li>
+            <li><a href="tambah-hewan.html">Tambah Hewan</a></li>
+            <li><a href="cari-hewan.html">Cari Hewan</a></li>
+            <li><a href="scan-rfid.html">Scan RFID</a></li>
+        </ul>
+    </nav>
+
+    <h1>Tambah Hewan</h1>
+    <form id="hewan-form">
+        <input id="id" placeholder="ID Hewan" required />
+        <input id="nama" placeholder="Nama Hewan" required />
+        <input id="jenis" placeholder="Jenis Hewan" required />
+        <input id="usia" type="number" placeholder="Usia Hewan" required />
+        <input id="status_kesehatan" list="status-list" placeholder="Status Kesehatan" required />
+        <datalist id="status-list">
+            <option value="Sehat"></option>
+            <option value="Sakit"></option>
+            <option value="Cedera"></option>
+            <option value="Dalam Perawatan"></option>
+        </datalist>
+        <button type="submit" id="submit-btn">Tambah Hewan</button>
+    </form>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById("hewan-form");
+            const idInput = document.getElementById("id");  // Ambil elemen input ID
+            const namaInput = document.getElementById("nama");
+            const jenisInput = document.getElementById("jenis");
+            const usiaInput = document.getElementById("usia");
+            const statusInput = document.getElementById("status_kesehatan");
+
+            form.addEventListener("submit", function (event) {
+                event.preventDefault();
+
+                const hewan = {
+                    id: idInput.value, // Ambil nilai ID
+                    nama: namaInput.value,
+                    jenis: jenisInput.value,
+                    usia: usiaInput.value,
+                    status_kesehatan: statusInput.value
+                };
+
+                fetch("http://localhost:3002/hewan", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(hewan),
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert("Hewan berhasil ditambahkan!");
+                        form.reset();
+                    })
+                    .catch(error => console.error("Error:", error));
+            });
+        });
+    </script>
+</body>
+
+</html>
