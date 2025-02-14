@@ -7,10 +7,18 @@ const path = require('path');
 const http = require('http');
 const { Server } = require("socket.io");
 
+const { createClient } = require('@supabase/supabase-js');
+const io = require('socket.io')(server);
+
 const app = express();
 const server = http.createServer(app);
 
 const port = process.env.PORT || 3002;
+
+// Ambil Supabase URL dan Key dari environment variables
+const supabaseUrl = process.env.SUPABASE_URL;  // Ambil dari environment variable
+const supabaseKey = process.env.SUPABASE_KEY;  // Ambil dari environment variable
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Middleware
 app.use(express.json());
@@ -155,15 +163,24 @@ app.post('/hewan', async (req, res) => {
 });
 
 app.post('/hewan/rfid', async (req, res) => {
-    const rfidUid = req.body.rfid_code; // Pastikan menggunakan "rfid_code" bukan "uid"
+    const rfidUid = req.body.rfid_code; // Mengambil rfid_code dari body request
     console.log('RFID Code diterima:', rfidUid);
 
     try {
-        const query = 'SELECT * FROM hewan WHERE id = $1';
-        const result = await pool.query(query, [rfidUid]);
+        // Query ke database Supabase untuk mencari hewan berdasarkan rfid_code
+        const { data, error } = await supabase
+            .from('hewan') // Pastikan tabel Anda bernama 'hewan'
+            .select('*')
+            .eq('rfid_code', rfidUid); // Pastikan 'rfid_code' adalah kolom di tabel 'hewan'
 
-        if (result.rows.length > 0) {
-            const hewan = result.rows[0];
+        if (error) {
+            console.error('Error querying database:', error);
+            return res.status(500).send({ message: 'Terjadi kesalahan saat mengambil data', error: error.message });
+        }
+
+        if (data && data.length > 0) {
+            const hewan = data[0]; // Ambil data pertama dari hasil query
+            // Emit data melalui WebSocket ke frontend
             io.emit('rfid-scanned', {
                 rfid_code: rfidUid,
                 nama: hewan.nama,
@@ -171,12 +188,15 @@ app.post('/hewan/rfid', async (req, res) => {
                 waktu_scan: new Date().toLocaleString()
             });
 
+            // Kirim respons sukses jika data ditemukan
             res.status(200).send('Data diterima');
         } else {
+            // Kirim respons 404 jika data tidak ditemukan
             res.status(404).send('Data tidak ditemukan');
         }
     } catch (error) {
         console.error('Error querying database:', error);
+        // Kirim respons 500 jika ada error pada database
         res.status(500).send({ message: 'Terjadi kesalahan saat mengambil data', error: error.message });
     }
 });
