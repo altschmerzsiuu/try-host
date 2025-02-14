@@ -168,6 +168,7 @@ app.post('/hewan/rfid', async (req, res) => {
 
             chatIds.forEach(id => bot.telegram.sendMessage(id, message));
             
+            // Tambahkan kode ini untuk mengirim data ke semua client
             io.emit('rfid-scanned', {
                 rfid_code: rfidUid,
                 nama: hewan.nama,
