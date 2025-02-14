@@ -42,13 +42,12 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ rfid: rfid })
+                body: JSON.stringify({ rfid_code: rfid })
             })
-            .then(response => response.json())
+            .then(response => response.text())
             .then(data => {
                 console.log('Data dari server:', data);
-                // Menampilkan data dari server ke halaman HTML
-                document.getElementById('rfid-display').textContent = 'UID: ' + data.rfid;
+                document.getElementById('rfid-display').textContent = 'UID: ' + data;
             })
             .catch(error => {
                 console.error('Error:', error);
