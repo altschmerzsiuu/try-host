@@ -29,46 +29,28 @@
                 </tr>
             </thead>
             <tbody id="scan-results">
-                <!-- Data akan ditambahkan di sini -->
+                <!-- Data will be added here -->
             </tbody>
         </table>
     </div>
 
     <script>
-        // Gunakan window.location.origin agar otomatis menyesuaikan dengan server
-        const socket = io(window.location.origin);
+        // Connect to the Socket.IO server
+        const socket = io('https://try-host.onrender.com');  // Replace with the correct URL of your server
 
-        // Ketika terhubung ke server
-        socket.on("connect", () => {
-            console.log("Terhubung ke server via Socket.io");
-        });
-
-        // Menerima data RFID dari server
-        socket.on("rfid-scanned", (data) => {
-            console.log("Data diterima dari server:", data);
-
-            // Ambil elemen untuk menampilkan hasil scan
-            const rfidDataTable = document.getElementById("scan-results");
-
-            // Format waktu agar lebih mudah dibaca
-            const waktuScan = new Date().toLocaleString("id-ID", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-            });
-
-            // Tambahkan data baru ke tabel tanpa menghapus data sebelumnya
-            rfidDataTable.insertAdjacentHTML("afterbegin", `
-                <tr>
-                    <td>${data.rfid_code}</td>
-                    <td>${data.nama || "Tidak ditemukan"}</td>
-                    <td>${data.info_tambahan || "-"}</td>
-                    <td>${waktuScan}</td>
-                </tr>
-            `);
+        // Listen for the 'rfid-scanned' event
+        socket.on('rfid-scanned', function(data) {
+            console.log("Received data:", data);
+            
+            // Add the new row to the table
+            const table = document.getElementById('scan-results');
+            const row = table.insertRow(0); // Insert a row at the top
+            row.innerHTML = `
+                <td>${data.rfid_code}</td>
+                <td>${data.nama}</td>
+                <td>${data.info_tambahan}</td>
+                <td>${data.waktu_scan}</td>
+            `;
         });
     </script>
 </body>
