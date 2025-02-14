@@ -37,11 +37,11 @@
     <script>
         // Connect to the Socket.IO server
         const socket = io('https://try-host.onrender.com');
+    
+        // Listen for 'rfid-scanned' event
         socket.on('rfid-scanned', function(data) {
             console.log("Received data:", data);
-            // Tambahkan data ke tabel
-        });
-            
+    
             // Add the new row to the table
             const table = document.getElementById('scan-results');
             const row = table.insertRow(0); // Insert a row at the top
