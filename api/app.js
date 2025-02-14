@@ -157,7 +157,6 @@ app.post('/hewan', async (req, res) => {
     }
 });
 
-// Endpoint: Terima data UID dari ESP8266
 app.post('/hewan/rfid', async (req, res) => {
     const rfidUid = req.body.uid;
     console.log('UID diterima:', rfidUid);
