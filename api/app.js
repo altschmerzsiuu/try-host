@@ -111,7 +111,6 @@ app.post('/hewan', async (req, res) => {
 
         const { id, nama, jenis, usia, status_kesehatan } = req.body;
 
-        // Cek apakah ID sudah ada di database
         const checkQuery = 'SELECT id FROM hewan WHERE id = $1';
         const checkResult = await pool.query(checkQuery, [id]);
 
@@ -119,25 +118,54 @@ app.post('/hewan', async (req, res) => {
             return res.status(400).json({ message: 'ID sudah digunakan, gunakan ID lain' });
         }
 
-        // Insert data ke database
         const insertQuery = `
             INSERT INTO hewan (id, nama, jenis, usia, status_kesehatan) 
             VALUES ($1, $2, $3, $4, $5) 
             RETURNING *`;
         const result = await pool.query(insertQuery, [id, nama, jenis, usia, status_kesehatan]);
 
-        // Kirim response sukses
         res.status(201).json({
             message: 'Data hewan berhasil ditambahkan',
             data: result.rows[0]
         });
 
-        // Kirim update ke WebSocket
         io.emit("new_hewan", result.rows[0]);
-
     } catch (err) {
         console.error("Kesalahan di server:", err);
         res.status(500).json({ message: 'Terjadi kesalahan di server', error: err.message });
+    }
+});
+
+// Endpoint: Terima data UID dari ESP8266
+app.post('/api/animal', async (req, res) => {
+    const rfidUid = req.body.uid;
+    console.log('UID diterima:', rfidUid);
+
+    try {
+        const query = 'SELECT * FROM hewan WHERE id = $1';
+        const result = await pool.query(query, [rfidUid]);
+
+        if (result.rows.length > 0) {
+            const hewan = result.rows[0];
+            const message = `Data Hewan:\nNama: ${hewan.nama}\nJenis: ${hewan.jenis}\nUsia: ${hewan.usia} tahun\nStatus Kesehatan: ${hewan.status_kesehatan}`;
+
+            chatIds.forEach(id => bot.telegram.sendMessage(id, message));
+            
+            io.emit('rfid-scanned', {
+                rfid_code: rfidUid,
+                nama: hewan.nama,
+                info_tambahan: hewan.jenis,
+                waktu_scan: new Date().toLocaleString()
+            });
+            
+            res.status(200).send('Data diterima');
+        } else {
+            chatIds.forEach(id => bot.telegram.sendMessage(id, `Tidak ditemukan data untuk UID: ${rfidUid}`));
+            res.status(404).send('Data tidak ditemukan');
+        }
+    } catch (error) {
+        console.error('Error querying database:', error);
+        res.status(500).send('Terjadi kesalahan saat mengambil data');
     }
 });
 
