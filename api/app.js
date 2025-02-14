@@ -8,7 +8,7 @@ const http = require('http');
 const { Server } = require("socket.io");
 
 const { createClient } = require('@supabase/supabase-js');
-const io = require('socket.io')(server);
+// const io = require('socket.io')(server);
 
 const app = express();
 const server = http.createServer(app);
