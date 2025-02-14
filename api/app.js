@@ -56,18 +56,24 @@ const io = new Server(server, {
     }
 });
 
-// Event ketika ada client yang terhubung ke WebSocket
-io.on("connection", (socket) => {
-    console.log("Client terhubung via Socket.io");
-
-    // Event menerima data RFID
-    socket.on("rfid-scan", (data) => {
-        console.log("Data RFID diterima:", data);
-        io.emit("rfid-scanned", data); // Kirim data ke semua client
+// Emit event 'rfid-scanned' ketika RFID dipindai
+io.on('connection', (socket) => {
+    console.log('A user connected');
+    
+    socket.on('rfid-scanned', (data) => {
+        console.log('RFID scanned:', data);
+        
+        // Kirim data kembali ke semua klien yang terhubung
+        io.emit('rfid-scanned', {
+            rfid_code: data.rfid_code,
+            nama: data.nama, // Misalnya nama hewan dari database
+            info_tambahan: data.info_tambahan, // Misalnya informasi tambahan
+            waktu_scan: new Date().toLocaleString() // Menambahkan waktu scan
+        });
     });
 
-    socket.on("disconnect", () => {
-        console.log("Client terputus");
+    socket.on('disconnect', () => {
+        console.log('User disconnected');
     });
 });
 
@@ -122,6 +128,47 @@ app.get('/hewan', async (req, res) => {
         res.status(500).json({ message: 'Terjadi kesalahan di server' });
     }
 });
+
+// Endpoint untuk ambil daftar hewan dengan pagination, search, dan sorting
+app.get('/hewan/rfid', async (req, res) => {
+    let { page = 1, limit = 10, search = '', sortBy = 'id', order = 'ASC' } = req.query;
+    page = parseInt(page);
+    limit = parseInt(limit);
+  
+    const validColumns = ['nama', 'jenis', 'usia', 'status_kesehatan', 'id'];
+    order = order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+  
+    if (!validColumns.includes(sortBy)) {
+      return res.status(400).json({ message: 'Kolom sortBy tidak valid' });
+    }
+  
+    try {
+      const offset = (page - 1) * limit;
+  
+      const query = `
+        SELECT * FROM hewan
+        WHERE nama ILIKE $1 OR jenis ILIKE $1
+        ORDER BY ${sortBy} ${order}
+        LIMIT $2 OFFSET $3
+      `;
+  
+      const result = await client.query(query, [`%${search}%`, limit, offset]);
+  
+      const countQuery = `SELECT COUNT(*) FROM hewan WHERE nama ILIKE $1 OR jenis ILIKE $1`;
+      const totalCount = await client.query(countQuery, [`%${search}%`]);
+  
+      res.json({
+        total: parseInt(totalCount.rows[0].count),
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount.rows[0].count / limit),
+        data: result.rows,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Terjadi kesalahan di server' });
+    }
+  });
 
 // Endpoint: Tambah data hewan
 app.post('/hewan', async (req, res) => {
