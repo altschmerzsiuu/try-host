@@ -35,13 +35,36 @@
     </div>
 
     <script>
+        // Fungsi untuk mengirim data RFID ke server
+        function sendRFIDData(rfid) {
+            fetch('https://try-host.onrender.com/hewan/rfid', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ rfid: rfid })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Data dari server:', data);
+                // Menampilkan data dari server ke halaman HTML
+                document.getElementById('rfid-display').textContent = 'UID: ' + data.rfid;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
         // Connect to the Socket.IO server
         const socket = io('https://try-host.onrender.com');
     
         // Listen for 'rfid-scanned' event
         socket.on('rfid-scanned', function(data) {
             console.log("Received data:", data);
-    
+
+            // Kirim RFID data ke server menggunakan fungsi sendRFIDData
+            sendRFIDData(data.rfid_code);  // Panggil fungsi kirim data dengan UID yang diterima
+            
             // Add the new row to the table
             const table = document.getElementById('scan-results');
             const row = table.insertRow(0); // Insert a row at the top
