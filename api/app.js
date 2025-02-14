@@ -182,7 +182,7 @@ app.post('/hewan/rfid', async (req, res) => {
         }
     } catch (error) {
         console.error('Error querying database:', error);
-        res.status(500).send('Terjadi kesalahan saat mengambil data');
+        res.status(500).send({ message: 'Terjadi kesalahan saat mengambil data', error: error.message });
     }
 });
 
