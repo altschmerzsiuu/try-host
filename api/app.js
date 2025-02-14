@@ -4,33 +4,54 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 const path = require('path');
+const http = require('http');
+const WebSocket = require('ws');
 
 const app = express();
-const port =  process.env.PORT || 3002;
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+const port = process.env.PORT || 3002;
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: "*", // Sesuaikan dengan domain frontend jika perlu
+    methods: ["GET", "POST", "PUT", "DELETE"]
+}));
 
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Koneksi PostgreSQL dengan Pool
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL, // Ini akan mengambil URL dari .env jika sudah didefinisikan
+    connectionString: process.env.DATABASE_URL,
     ssl: {
-        rejectUnauthorized: false, // Pastikan SSL diaktifkan di Supabase
+        rejectUnauthorized: false, // Pastikan SSL diaktifkan jika menggunakan Supabase atau Render
     }
 });
 
-// Validasi schema dengan Joi (lebih fleksibel)
+// WebSocket connection handling
+wss.on("connection", (ws) => {
+    console.log("Client WebSocket connected");
+
+    ws.on("message", (message) => {
+        console.log(`Received: ${message}`);
+        ws.send(`Echo: ${message}`);
+    });
+
+    ws.on("close", () => {
+        console.log("Client WebSocket disconnected");
+    });
+});
+
+// Validasi schema dengan Joi
 const schema = Joi.object({
-    id: Joi.string().trim().min(1).required(),  // Tambahkan id agar bisa divalidasi
+    id: Joi.string().trim().min(1).required(),
     nama: Joi.string().trim().min(1).required(),
     jenis: Joi.string().trim().min(1).required(),
     usia: Joi.number().integer().min(0).required(),
     status_kesehatan: Joi.string().trim().min(3).required(),
 });
-
 
 // Endpoint: Ambil daftar hewan dengan pagination dan search
 app.get('/hewan', async (req, res) => {
@@ -47,7 +68,6 @@ app.get('/hewan', async (req, res) => {
 
     try {
         const offset = (page - 1) * limit;
-
         const query = `
             SELECT * FROM hewan
             WHERE nama ILIKE $1 OR jenis ILIKE $1
@@ -56,7 +76,6 @@ app.get('/hewan', async (req, res) => {
         `;
 
         const result = await pool.query(query, [`%${search}%`, limit, offset]);
-
         const countQuery = `SELECT COUNT(*) FROM hewan WHERE nama ILIKE $1 OR jenis ILIKE $1`;
         const totalCount = await pool.query(countQuery, [`%${search}%`]);
 
@@ -67,6 +86,14 @@ app.get('/hewan', async (req, res) => {
             totalPages: Math.ceil(totalCount.rows[0].count / limit),
             data: result.rows,
         });
+
+        // Kirim update ke WebSocket jika ada client yang terhubung
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({ event: "update_hewan", data: result.rows }));
+            }
+        });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Terjadi kesalahan di server' });
@@ -75,11 +102,8 @@ app.get('/hewan', async (req, res) => {
 
 // Endpoint: Tambah data hewan
 app.post('/hewan', async (req, res) => {
-    console.log("Data yang diterima di backend:", req.body); // Debugging
-
     const { error } = schema.validate(req.body);
     if (error) {
-        console.log("Validasi gagal:", error.details[0].message);
         return res.status(400).json({ message: error.details[0].message });
     }
 
@@ -89,8 +113,15 @@ app.post('/hewan', async (req, res) => {
             'INSERT INTO hewan (id, nama, jenis, usia, status_kesehatan) VALUES ($1, $2, $3, $4, $5) RETURNING *',
             [id, nama, jenis, usia, status_kesehatan]
         );
-        console.log("Data berhasil dimasukkan ke PostgreSQL:", result.rows[0]);
         res.status(201).json(result.rows[0]);
+
+        // Kirim update ke WebSocket
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({ event: "new_hewan", data: result.rows[0] }));
+            }
+        });
+
     } catch (err) {
         console.error("Kesalahan di server:", err);
         res.status(500).json({ message: 'Terjadi kesalahan di server' });
@@ -118,6 +149,14 @@ app.put('/hewan/:id', async (req, res) => {
 
         if (result.rows.length > 0) {
             res.status(200).json(result.rows[0]);
+
+            // Kirim update ke WebSocket
+            wss.clients.forEach(client => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({ event: "update_hewan", data: result.rows[0] }));
+                }
+            });
+
         } else {
             res.status(404).json({ message: 'Hewan tidak ditemukan dengan ID tersebut' });
         }
@@ -134,6 +173,14 @@ app.delete('/hewan/:id', async (req, res) => {
         const result = await pool.query('DELETE FROM hewan WHERE id = $1 RETURNING *', [id]);
         if (result.rows.length > 0) {
             res.json({ message: 'Hewan berhasil dihapus' });
+
+            // Kirim update ke WebSocket
+            wss.clients.forEach(client => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({ event: "delete_hewan", data: { id } }));
+                }
+            });
+
         } else {
             res.status(404).json({ message: 'Hewan tidak ditemukan' });
         }
@@ -144,6 +191,6 @@ app.delete('/hewan/:id', async (req, res) => {
 });
 
 // Jalankan server
-app.listen(port, () => {
+server.listen(port, () => {
     console.log(`Server berjalan di http://localhost:${port}`);
 });
