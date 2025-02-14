@@ -155,8 +155,8 @@ app.post('/hewan', async (req, res) => {
 });
 
 app.post('/hewan/rfid', async (req, res) => {
-    const rfidUid = req.body.uid;
-    console.log('UID diterima:', rfidUid);
+    const rfidUid = req.body.rfid_code; // Pastikan menggunakan "rfid_code" bukan "uid"
+    console.log('RFID Code diterima:', rfidUid);
 
     try {
         const query = 'SELECT * FROM hewan WHERE id = $1';
