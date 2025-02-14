@@ -5,20 +5,16 @@ const cors = require('cors');
 const { Pool } = require('pg');
 const path = require('path');
 const http = require('http');
-const WebSocket = require('ws');
+const { Server } = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
 
 const port = process.env.PORT || 3002;
 
 // Middleware
 app.use(express.json());
-app.use(cors({
-    origin: "try-host.onrender.com", // Sesuaikan dengan domain frontend jika perlu
-    methods: ["GET", "POST", "PUT", "DELETE"]
-}));
+app.use(cors());
 
 app.use(express.static(path.join(__dirname, '../frontend')));
 
@@ -30,17 +26,26 @@ const pool = new Pool({
     }
 });
 
-// WebSocket connection handling
-wss.on("connection", (ws) => {
-    console.log("Client WebSocket connected");
+// Konfigurasi CORS agar bisa diakses dari frontend
+const io = new Server(server, {
+    cors: {
+        origin: "https://try-host.onrender.com", // Sesuaikan dengan domain frontend
+        methods: ["GET", "POST"]
+    }
+});
 
-    ws.on("message", (message) => {
-        console.log(`Received: ${message}`);
-        ws.send(`Echo: ${message}`);
+// Event ketika ada client yang terhubung ke WebSocket
+io.on("connection", (socket) => {
+    console.log("Client terhubung via Socket.io");
+
+    // Event menerima data RFID
+    socket.on("rfid-scan", (data) => {
+        console.log("Data RFID diterima:", data);
+        io.emit("rfid-scanned", data); // Kirim data ke semua client
     });
 
-    ws.on("close", () => {
-        console.log("Client WebSocket disconnected");
+    socket.on("disconnect", () => {
+        console.log("Client terputus");
     });
 });
 
