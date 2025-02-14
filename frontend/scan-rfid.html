@@ -36,30 +36,36 @@
 
     <script>
         // Gunakan window.location.origin agar otomatis menyesuaikan dengan server
-        const socket = io(window.location.origin.replace(/^http/, 'ws')); 
-        
-        socket.on('rfid-scanned', (data) => {
-            console.log('Data diterima dari server:', data);
+        const socket = io(window.location.origin);
+
+        // Ketika terhubung ke server
+        socket.on("connect", () => {
+            console.log("Terhubung ke server via Socket.io");
+        });
+
+        // Menerima data RFID dari server
+        socket.on("rfid-scanned", (data) => {
+            console.log("Data diterima dari server:", data);
 
             // Ambil elemen untuk menampilkan hasil scan
-            const rfidDataTable = document.getElementById('scan-results');
+            const rfidDataTable = document.getElementById("scan-results");
 
             // Format waktu agar lebih mudah dibaca
-            const waktuScan = new Date(data.waktu_scan).toLocaleString('id-ID', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
+            const waktuScan = new Date().toLocaleString("id-ID", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
             });
 
             // Tambahkan data baru ke tabel tanpa menghapus data sebelumnya
-            rfidDataTable.insertAdjacentHTML('afterbegin', `
+            rfidDataTable.insertAdjacentHTML("afterbegin", `
                 <tr>
                     <td>${data.rfid_code}</td>
-                    <td>${data.nama || 'Tidak ditemukan'}</td>
-                    <td>${data.info_tambahan || '-'}</td>
+                    <td>${data.nama || "Tidak ditemukan"}</td>
+                    <td>${data.info_tambahan || "-"}</td>
                     <td>${waktuScan}</td>
                 </tr>
             `);
