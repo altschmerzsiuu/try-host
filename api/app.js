@@ -119,7 +119,7 @@ app.get('/hewan', async (req, res) => {
 });
 
 // Endpoint: Tambah data hewan
-app.post('/hewan', async (req, res) => {
+app.post('/hewan/rfid', async (req, res) => {
     try {
         const { error } = schema.validate(req.body);
         if (error) {
@@ -128,6 +128,7 @@ app.post('/hewan', async (req, res) => {
 
         const { id, nama, jenis, usia, status_kesehatan } = req.body;
 
+        // Cek apakah ID sudah digunakan
         const checkQuery = 'SELECT id FROM hewan WHERE id = $1';
         const checkResult = await pool.query(checkQuery, [id]);
 
@@ -135,55 +136,44 @@ app.post('/hewan', async (req, res) => {
             return res.status(400).json({ message: 'ID sudah digunakan, gunakan ID lain' });
         }
 
+        // Masukkan data hewan baru ke database
         const insertQuery = `
             INSERT INTO hewan (id, nama, jenis, usia, status_kesehatan) 
             VALUES ($1, $2, $3, $4, $5) 
             RETURNING *`;
         const result = await pool.query(insertQuery, [id, nama, jenis, usia, status_kesehatan]);
 
-        res.status(201).json({
-            message: 'Data hewan berhasil ditambahkan',
-            data: result.rows[0]
-        });
-
+        // Kirim data hewan baru ke semua client via WebSocket
         io.emit("new_hewan", result.rows[0]);
-    } catch (err) {
-        console.error("Kesalahan di server:", err);
-        res.status(500).json({ message: 'Terjadi kesalahan di server', error: err.message });
-    }
-});
 
-// Endpoint: Terima data UID dari ESP8266
-app.post('/hewan/rfid', async (req, res) => {
-    const rfidUid = req.body.uid;
-    console.log('UID diterima:', rfidUid);
+        // Sekarang kita akan memeriksa data RFID untuk ID yang baru dimasukkan
+        const rfidUid = id; // Menggunakan ID yang baru saja dimasukkan sebagai UID RFID
+        console.log('UID diterima:', rfidUid);
 
-    try {
+        // Ambil data hewan berdasarkan UID
         const query = 'SELECT * FROM hewan WHERE id = $1';
-        const result = await pool.query(query, [rfidUid]);
+        const rfidResult = await pool.query(query, [rfidUid]);
 
-        if (result.rows.length > 0) {
-            const hewan = result.rows[0];
-            const message = `Data Hewan:\nNama: ${hewan.nama}\nJenis: ${hewan.jenis}\nUsia: ${hewan.usia} tahun\nStatus Kesehatan: ${hewan.status_kesehatan}`;
-
-            chatIds.forEach(id => bot.telegram.sendMessage(id, message));
-            
-            // Tambahkan kode ini untuk mengirim data ke semua client
+        if (rfidResult.rows.length > 0) {
+            const hewan = rfidResult.rows[0];
             io.emit('rfid-scanned', {
                 rfid_code: rfidUid,
                 nama: hewan.nama,
                 info_tambahan: hewan.jenis,
                 waktu_scan: new Date().toLocaleString()
             });
-            
-            res.status(200).send('Data diterima');
+
+            res.status(200).json({
+                message: 'Data hewan berhasil ditambahkan dan UID diproses',
+                data: result.rows[0]
+            });
         } else {
-            chatIds.forEach(id => bot.telegram.sendMessage(id, `Tidak ditemukan data untuk UID: ${rfidUid}`));
-            res.status(404).send('Data tidak ditemukan');
+            res.status(404).json({ message: 'Data hewan tidak ditemukan untuk UID tersebut' });
         }
-    } catch (error) {
-        console.error('Error querying database:', error);
-        res.status(500).send({ message: 'Terjadi kesalahan saat mengambil data', error: error.message });
+
+    } catch (err) {
+        console.error("Kesalahan di server:", err);
+        res.status(500).json({ message: 'Terjadi kesalahan di server', error: err.message });
     }
 });
 
