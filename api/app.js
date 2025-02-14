@@ -164,7 +164,7 @@ app.post('/hewan', async (req, res) => {
 
 app.post('/hewan/rfid', async (req, res) => {
     const rfidUid = req.body.rfid_code; // Mengambil rfid_code dari body request
-    console.log('RFID Code diterima:', rfidUid);
+    console.log('Data diterima:', req.body); // Tampilkan data yang dikirim
 
     try {
         // Query ke database Supabase untuk mencari hewan berdasarkan rfid_code
