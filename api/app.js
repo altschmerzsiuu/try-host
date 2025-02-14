@@ -93,11 +93,7 @@ app.get('/hewan', async (req, res) => {
         });
 
         // Kirim update ke WebSocket jika ada client yang terhubung
-        wss.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ event: "update_hewan", data: result.rows }));
-            }
-        });
+        io.emit("update_hewan", result.rows);
 
     } catch (err) {
         console.error(err);
@@ -121,11 +117,7 @@ app.post('/hewan', async (req, res) => {
         res.status(201).json(result.rows[0]);
 
         // Kirim update ke WebSocket
-        wss.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ event: "new_hewan", data: result.rows[0] }));
-            }
-        });
+        io.emit("new_hewan", result.rows[0]);
 
     } catch (err) {
         console.error("Kesalahan di server:", err);
@@ -156,11 +148,7 @@ app.put('/hewan/:id', async (req, res) => {
             res.status(200).json(result.rows[0]);
 
             // Kirim update ke WebSocket
-            wss.clients.forEach(client => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({ event: "update_hewan", data: result.rows[0] }));
-                }
-            });
+            io.emit("update_hewan", result.rows[0]);
 
         } else {
             res.status(404).json({ message: 'Hewan tidak ditemukan dengan ID tersebut' });
@@ -180,11 +168,7 @@ app.delete('/hewan/:id', async (req, res) => {
             res.json({ message: 'Hewan berhasil dihapus' });
 
             // Kirim update ke WebSocket
-            wss.clients.forEach(client => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({ event: "delete_hewan", data: { id } }));
-                }
-            });
+            io.emit("delete_hewan", { id });
 
         } else {
             res.status(404).json({ message: 'Hewan tidak ditemukan' });
