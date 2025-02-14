@@ -16,7 +16,7 @@ const port = process.env.PORT || 3002;
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: "*", // Sesuaikan dengan domain frontend jika perlu
+    origin: "https://try-host.onrender.com/", // Sesuaikan dengan domain frontend jika perlu
     methods: ["GET", "POST", "PUT", "DELETE"]
 }));
 
