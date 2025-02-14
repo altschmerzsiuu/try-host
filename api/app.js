@@ -25,10 +25,9 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 // Koneksi PostgreSQL dengan Pool
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false, // Pastikan SSL diaktifkan jika menggunakan Supabase atau Render
-    }
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
+
 
 // Pengecekan koneksi ke database
 pool.connect()
@@ -38,10 +37,8 @@ pool.connect()
     })
     .catch(err => {
         console.error('Error koneksi ke database:', err);
-        // Jika koneksi gagal, kirim respons error
-        res.status(500).json({ message: 'Terjadi kesalahan saat menghubungkan ke database' });
+        // Just log the error, no need to send a response here.
     });
-
 
 // Konfigurasi CORS agar bisa diakses dari frontend
 const io = new Server(server, {
