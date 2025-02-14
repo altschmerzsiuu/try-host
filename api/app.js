@@ -103,25 +103,41 @@ app.get('/hewan', async (req, res) => {
 
 // Endpoint: Tambah data hewan
 app.post('/hewan', async (req, res) => {
-    const { error } = schema.validate(req.body);
-    if (error) {
-        return res.status(400).json({ message: error.details[0].message });
-    }
-
-    const { id, nama, jenis, usia, status_kesehatan } = req.body;
     try {
-        const result = await pool.query(
-            'INSERT INTO hewan (id, nama, jenis, usia, status_kesehatan) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [id, nama, jenis, usia, status_kesehatan]
-        );
-        res.status(201).json(result.rows[0]);
+        const { error } = schema.validate(req.body);
+        if (error) {
+            return res.status(400).json({ message: error.details[0].message });
+        }
+
+        const { id, nama, jenis, usia, status_kesehatan } = req.body;
+
+        // Cek apakah ID sudah ada di database
+        const checkQuery = 'SELECT id FROM hewan WHERE id = $1';
+        const checkResult = await pool.query(checkQuery, [id]);
+
+        if (checkResult.rows.length > 0) {
+            return res.status(400).json({ message: 'ID sudah digunakan, gunakan ID lain' });
+        }
+
+        // Insert data ke database
+        const insertQuery = `
+            INSERT INTO hewan (id, nama, jenis, usia, status_kesehatan) 
+            VALUES ($1, $2, $3, $4, $5) 
+            RETURNING *`;
+        const result = await pool.query(insertQuery, [id, nama, jenis, usia, status_kesehatan]);
+
+        // Kirim response sukses
+        res.status(201).json({
+            message: 'Data hewan berhasil ditambahkan',
+            data: result.rows[0]
+        });
 
         // Kirim update ke WebSocket
         io.emit("new_hewan", result.rows[0]);
 
     } catch (err) {
         console.error("Kesalahan di server:", err);
-        res.status(500).json({ message: 'Terjadi kesalahan di server' });
+        res.status(500).json({ message: 'Terjadi kesalahan di server', error: err.message });
     }
 });
 
