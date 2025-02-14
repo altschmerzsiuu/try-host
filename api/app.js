@@ -14,7 +14,11 @@ const port = process.env.PORT || 3002;
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: 'https://try-host.onrender.com', // Ganti dengan alamat frontend kamu
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type']
+  }));
 
 app.use(express.static(path.join(__dirname, '../frontend')));
 
