@@ -30,6 +30,19 @@ const pool = new Pool({
     }
 });
 
+// Pengecekan koneksi ke database
+pool.connect()
+    .then(client => {
+        client.release();
+        console.log('Koneksi ke database berhasil');
+    })
+    .catch(err => {
+        console.error('Error koneksi ke database:', err);
+        // Jika koneksi gagal, kirim respons error
+        res.status(500).json({ message: 'Terjadi kesalahan saat menghubungkan ke database' });
+    });
+
+
 // Konfigurasi CORS agar bisa diakses dari frontend
 const io = new Server(server, {
     cors: {
@@ -141,7 +154,7 @@ app.post('/hewan', async (req, res) => {
 });
 
 // Endpoint: Terima data UID dari ESP8266
-app.post('/api/animal', async (req, res) => {
+app.post('/hewan/rfid', async (req, res) => {
     const rfidUid = req.body.uid;
     console.log('UID diterima:', rfidUid);
 
