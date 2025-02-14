@@ -119,7 +119,7 @@ app.get('/hewan', async (req, res) => {
 });
 
 // Endpoint: Tambah data hewan
-app.post('/hewan/rfid', async (req, res) => {
+app.post('/hewan', async (req, res) => {
     try {
         const { error } = schema.validate(req.body);
         if (error) {
@@ -146,16 +146,28 @@ app.post('/hewan/rfid', async (req, res) => {
         // Kirim data hewan baru ke semua client via WebSocket
         io.emit("new_hewan", result.rows[0]);
 
-        // Sekarang kita akan memeriksa data RFID untuk ID yang baru dimasukkan
-        const rfidUid = id; // Menggunakan ID yang baru saja dimasukkan sebagai UID RFID
-        console.log('UID diterima:', rfidUid);
+        res.status(201).json({
+            message: 'Data hewan berhasil ditambahkan',
+            data: result.rows[0]
+        });
 
-        // Ambil data hewan berdasarkan UID
+    } catch (err) {
+        console.error("Kesalahan di server:", err);
+        res.status(500).json({ message: 'Terjadi kesalahan di server', error: err.message });
+    }
+});
+
+// Endpoint: Terima data UID dari ESP8266
+app.post('/hewan/rfid', async (req, res) => {
+    const rfidUid = req.body.uid;
+    console.log('UID diterima:', rfidUid);
+
+    try {
         const query = 'SELECT * FROM hewan WHERE id = $1';
-        const rfidResult = await pool.query(query, [rfidUid]);
+        const result = await pool.query(query, [rfidUid]);
 
-        if (rfidResult.rows.length > 0) {
-            const hewan = rfidResult.rows[0];
+        if (result.rows.length > 0) {
+            const hewan = result.rows[0];
             io.emit('rfid-scanned', {
                 rfid_code: rfidUid,
                 nama: hewan.nama,
@@ -163,17 +175,13 @@ app.post('/hewan/rfid', async (req, res) => {
                 waktu_scan: new Date().toLocaleString()
             });
 
-            res.status(200).json({
-                message: 'Data hewan berhasil ditambahkan dan UID diproses',
-                data: result.rows[0]
-            });
+            res.status(200).send('Data diterima');
         } else {
-            res.status(404).json({ message: 'Data hewan tidak ditemukan untuk UID tersebut' });
+            res.status(404).send('Data tidak ditemukan');
         }
-
-    } catch (err) {
-        console.error("Kesalahan di server:", err);
-        res.status(500).json({ message: 'Terjadi kesalahan di server', error: err.message });
+    } catch (error) {
+        console.error('Error querying database:', error);
+        res.status(500).send({ message: 'Terjadi kesalahan saat mengambil data', error: error.message });
     }
 });
 
